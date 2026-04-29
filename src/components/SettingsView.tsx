@@ -1,5 +1,4 @@
-import React from 'react';
-import { Bell, Shield, Wallet, Mail, Cpu, Globe } from 'lucide-react';
+import { Bell, Shield, Mail, Cpu, Globe } from 'lucide-react';
 
 export default function SettingsView() {
     return (

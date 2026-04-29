@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
     LogOut, Shield, Zap, Circle, LayoutDashboard,
-    MessageSquare, Settings, Copy, Check, Menu,
-    ChevronLeft, ChevronRight, User, PieChart, Activity
+    MessageSquare, Settings, Copy, Check,
+    ChevronLeft, ChevronRight, PieChart, Activity
 } from 'lucide-react';
 
 // Sub-components

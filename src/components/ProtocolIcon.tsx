@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 interface ProtocolIconProps {
     protocol: 'lulo' | 'kamino' | 'jupiter' | 'umbra';

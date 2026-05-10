@@ -3,9 +3,9 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
     LogOut, Shield, Zap, Circle, LayoutDashboard,
-    MessageSquare, Settings, Copy, Check,
-    ChevronLeft, ChevronRight, PieChart, Activity
+    MessageSquare, Settings, ChevronLeft, ChevronRight, PieChart, Activity, Crown
 } from 'lucide-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 // Sub-components
 import AgentChat from '../components/AgentChat';
@@ -17,12 +17,13 @@ export default function Dashboard() {
     const [user, setUser] = useState<any>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [currentView, setCurrentView] = useState<'overview' | 'chat' | 'portfolio' | 'settings'>('overview');
-    const [copied, setCopied] = useState(false);
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     const [portfolioData, setPortfolioData] = useState<any>(null);
     const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false);
+
+    const [subscription, setSubscription] = useState<any>({ tier: 'free', isPro: false, proExpiresAt: null });
 
     useEffect(() => {
         const storedUser = localStorage.getItem('athena_user');
@@ -60,6 +61,7 @@ export default function Dashboard() {
         if (!user?.walletAddress) return;
 
         setIsLoadingData(true);
+        // Fetch dashboard data
         axios.get(`/api/portfolio/dashboard/${user.walletAddress}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('athena_token')}` }
         })
@@ -71,6 +73,11 @@ export default function Dashboard() {
                 console.error('Failed to fetch dashboard data:', err);
                 setIsLoadingData(false);
             });
+
+        // Fetch subscription status
+        axios.get('/api/subscription/status', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('athena_token')}` }
+        }).then(res => setSubscription(res.data)).catch(err => console.error('Failed to fetch sub:', err));
     }, [user?.walletAddress]);
 
     // Fetch Jupiter Portfolio natively when accessing view
@@ -98,18 +105,6 @@ export default function Dashboard() {
         localStorage.removeItem('athena_user');
         navigate('/');
     };
-
-    const handleCopy = () => {
-        const addr = user?.walletAddress;
-        if (addr) {
-            navigator.clipboard.writeText(addr);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const displayAddress = user?.walletAddress;
-    const shortAddress = displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-6)}` : 'DISCONNECTED';
 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -144,6 +139,23 @@ export default function Dashboard() {
                         </div>
                     )}
                 </div>
+
+                {/* Subscription Tier Badge */}
+                {!isSidebarCollapsed && (
+                    <div className="px-4 pt-4">
+                        <button
+                            onClick={() => navigate('/pricing')}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-sm border ${subscription.isPro ? 'border-amber-200 bg-amber-50 hover:bg-amber-100' : 'border-stone-200 bg-stone-50 hover:bg-stone-100'} transition-all`}
+                        >
+                            <div className="flex items-center space-x-2">
+                                <Crown size={12} className={subscription.isPro ? 'text-amber-500' : 'text-stone-400'} />
+                                <span className={`text-[10px] font-mono uppercase tracking-widest ${subscription.isPro ? 'text-amber-700' : 'text-stone-500'}`}>
+                                    {subscription.isPro ? '✦ PRO' : 'FREE ↗'}
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                )}
 
                 {/* Nav Links */}
                 <nav className="flex-1 p-4 space-y-2 pt-8">
@@ -197,17 +209,17 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex items-center bg-stone-900 text-white px-4 py-2 rounded-sm space-x-3 shadow-sm group">
-                            <div className="flex flex-col cursor-help pt-0.5">
-                                <span className="text-[8px] font-mono uppercase tracking-tight text-stone-500 group-hover:text-stone-400 transition-colors">Session Lock</span>
-                                <span className="text-[10px] font-mono tracking-wider">{shortAddress}</span>
-                            </div>
-                            <button
-                                onClick={handleCopy}
-                                className="p-1 hover:bg-white/10 rounded transition-colors"
-                            >
-                                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                            </button>
+                        <div className="flex items-center space-x-3">
+                            {subscription.isPro ? (
+                                <div className="border border-amber-200 bg-amber-50 px-3 py-1.5 rounded-sm flex items-center space-x-2">
+                                    <span className="text-[10px] font-mono font-bold tracking-wider text-amber-600">PRO</span>
+                                </div>
+                            ) : (
+                                <div className="border border-stone-200 bg-stone-50 px-3 py-1.5 rounded-sm flex items-center space-x-2 cursor-pointer hover:bg-stone-100" onClick={() => navigate('/pricing')}>
+                                    <span className="text-[10px] font-mono tracking-wider text-stone-500">FREE</span>
+                                </div>
+                            )}
+                            <WalletMultiButton className="!bg-stone-900 hover:!bg-stone-800 !h-auto !py-2 !px-4 !text-[10px] !font-mono !uppercase !tracking-widest !rounded-sm !shadow-sm transition-all" />
                         </div>
 
                         <button
@@ -377,8 +389,8 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {currentView === 'chat' && <AgentChat />}
-                    {currentView === 'settings' && <SettingsView />}
+                    {currentView === 'chat' && <AgentChat isPro={subscription.isPro} userId={user?.id} />}
+                    {currentView === 'settings' && <SettingsView user={{ ...user, proExpiresAt: subscription.proExpiresAt }} tier={subscription.tier} />}
                     {currentView === 'portfolio' && (
                         <div className="p-8 lg:p-12 w-full animate-in fade-in duration-500">
                             <div className="mb-8">

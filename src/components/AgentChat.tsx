@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Loader2, Sparkles, Zap, Crown, CheckCircle2, XCircle } from 'lucide-react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -138,7 +138,7 @@ interface AgentChatProps {
     userId?: string;
 }
 
-export default function AgentChat({ isPro = false, userId }: AgentChatProps) {
+export default function AgentChat({ isPro = false }: AgentChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'assistant',
